@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>User Profile</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f0f0f0;
+      font-family: Arial, sans-serif;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 300px;
+      text-align: center;
+      padding: 20px;
+    }
+    .card img {
+      border-radius: 50%;
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      margin-bottom: 15px;
+    }
+    .card h2 {
+      margin: 10px 0;
+      color: #333;
+    }
+    .card p {
+      color: #666;
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <img th:src="${photo}" alt="User Photo">
+  <h2 th:text="${name}">User Name</h2>
+  <!-- Cambiado data-email a th:attr -->
+  <p th:text="${email}" id="userEmail" th:attr="data-email=${email}">user@example.com</p>
+  <p th:text="${userAlias}" id="userAlias" th:attr="data-user=${userAlias}">user@example.com</p>
+  <p th:text="${tipo}" id="usertipo" th:attr="data-tipo=${tipo}">Tipo</p>
+  <p><h3><a href="/fill">Ver mis imagenes subidas</a> </h3></p>
+  <br><h3><a href="/upload">Subir imágenes</a> </h3>
+  <br><h3><a href="/firmados">Ver archivos firmados</a> </h3>
+  <br><h3><a href="/sharedme">Ver archivos compartidos conmigo</a> </h3>
+</div>
+
+<script>
+  // Obtener el email desde el atributo 'data-user' del elemento con ID "userAlias"
+  var userEmail = document.getElementById("userAlias").getAttribute("data-user");
+  var tipoUser = document.getElementById("usertipo").getAttribute("data-tipo");
+  console.log(tipoUser+"el tipo de usuario");
+
+  if (!userEmail && !localStorage.getItem("userEmail")) {
+    alert("No tiene acceso a esta página" +userEmail);
+    window.location.href = "/login";
+  } else {
+    if (localStorage.getItem("userEmail") === userEmail) {
+      alert("Ya está el usuario");
+    } else {
+      localStorage.setItem("userEmail", userEmail);
+      alert("Se agregó el usuario");
+    }
+  }
+
+  if (tipoUser === null) {
+    alert("Qué bueno tenerte de regreso");
+  } else {
+    alert("Bienvenido usuario nuevo. Recuerda almacenar correctamente tu llave privada, nunca la pierdas.");
+
+    // Descargar el archivo automáticamente
+    fetch(`/download-file?user=${encodeURIComponent(userEmail)}`)
+            .then(response => {
+              if (!response.ok) {
+                console.error("no se descargaron las llaver")
+                throw new Error("Error al descargar el archivo");
+              }
+              return response.blob(); // Convertir la respuesta en un Blob
+            })
+            .then(blob => {
+              const url = window.URL.createObjectURL(blob); // Crear una URL para el Blob
+              const a = document.createElement("a"); // Crear un elemento de enlace
+              a.href = url;
+              a.download = "privateKey.key"; // Nombre del archivo descargado
+              document.body.appendChild(a);
+              a.click(); // Simular un clic para descargar
+              a.remove(); // Eliminar el enlace temporal
+              window.URL.revokeObjectURL(url); // Liberar la URL creada
+            })
+            .catch(error => {
+              console.error("Error al descargar el archivo:", error);
+            });
+  }
+</script>
+
+
+</body>
+</html>

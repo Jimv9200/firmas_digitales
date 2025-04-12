@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Imágenes</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        img {
+            max-width: 100px;
+            height: auto;
+        }
+        .delete-button {
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .delete-button:hover {
+            background-color: darkred;
+        }
+        .file-button {
+            background-color: blue;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .file-button:hover {
+            background-color: darkblue;
+        }
+        /* Estilos para el indicador de carga */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .loading-overlay span {
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<h1>Imágenes de la Carpeta</h1>
+
+<!-- Indicador de carga -->
+<div id="loadingOverlay" class="loading-overlay">
+    <span>Cargando...</span>
+</div>
+
+<table id="filesTable">
+    <thead>
+    <tr>
+        <th>Imagen</th>
+        <th>Nombre del Archivo</th>
+        <th>Remitente</th>
+        <th>Acciones</th>
+    </tr>
+    </thead>
+    <tbody>
+    <!-- Los archivos se insertarán aquí -->
+    </tbody>
+</table>
+
+<script>
+    const user = localStorage.getItem("userEmail");
+    const folderPath = user; // Ruta de la carpeta
+    const loadingOverlay = document.getElementById("loadingOverlay");
+
+    // Función para mostrar/ocultar indicador de carga
+    function toggleLoading(show) {
+        loadingOverlay.style.display = show ? "flex" : "none";
+    }
+
+    // Función para obtener y mostrar los archivos
+    function loadFiles() {
+        var ext=false;
+        toggleLoading(true); // Mostrar indicador de carga
+        console.log("el usuario que estoy usando es:"+user)
+        let userRemited="";
+        //despues de =
+        fetch(`/shared?folderPath=${user}`)
+            .then(response => response.json()) // Convertir la respuesta a JSON
+            .then(files => {
+                const tableBody = document.getElementById("filesTable").getElementsByTagName("tbody")[0];
+
+                // Limpiar la tabla antes de cargar nuevos datos
+                tableBody.innerHTML = "";
+
+                files.forEach(file => {
+                    // Crear una nueva fila en la tabla
+                    const row = tableBody.insertRow();
+
+                    // Crear una celda para la imagen
+                    const imgCell = row.insertCell();
+                    const imgElement = document.createElement('img');
+                    imgElement.src = "/usuario/" + user + "/received/" + file; // Ruta de la imagen
+
+
+                    imgCell.appendChild(imgElement);
+
+                    // Crear una celda para el nombre del archivo
+                    const nameCell = row.insertCell();
+                    nameCell.textContent = file;
+
+                    var dividir = file.split(".");
+                    var extension = dividir[dividir.length - 1];
+                    var usuariodividir=file.split("-");
+                    var usuariodividido=usuariodividir[0];
+
+                    console.log("la extension es:"+ extension);
+
+                    if(extension==="enc"){
+                        ext=true;
+                    }else{
+                        ext=false;
+                    }
+                    // Crear una celda para el mensaje
+                    const messageCell = row.insertCell();
+                    console.log("el usuario buscado es:"+ usuariodividido);
+                    buscarUsuario(usuariodividido).then(resultado => {
+                        messageCell.textContent=resultado;
+                        console.log("Resultado:", resultado); // Muestra el resultado obtenido
+                    });
+
+                    // Crear una celda para las acciones
+                    const actionCell = row.insertCell();
+
+                    // Campo de selección de archivo
+                    const fileInput = document.createElement('input');
+                    fileInput.type = "file";
+                    fileInput.style.display = "none"; // Oculto por defecto
+
+                    // Botón para seleccionar y enviar
+                    const attachButton = document.createElement('button');
+                    if(!ext){
+                        attachButton.textContent = "Confirmar firma";
+                        attachButton.className = "file-button";
+                        attachButton.addEventListener('click', function () {
+
+
+                            // Crear FormData para enviar los datos
+                            const formData = new FormData();
+
+                            formData.append('archivoTabla', file); // Archivo desde la tabla
+                            const remitente = row.children[2].textContent;
+                            formData.append("remitente", remitente);
+                            formData.append("usuario", user);
+                            console.log("Remitente: "+ remitente);
+                            console.log('archivoTabla', file);
+
+                            toggleLoading(true); // Mostrar indicador de carga
+                            fetch('/confirmarfirma', {
+                                method: 'POST',
+                                body: formData
+                            })
+                                .then(response => response.text())
+                                .then(message => {
+                                    alert("Mensaje enviado: " + message); // Mostrar mensaje de éxito o error
+                                    loadFiles(); // Recargar la tabla de archivos
+                                })
+                                .catch(error => {
+                                    console.error('Error al enviar el mensaje:', error);
+                                    alert('Error al enviar el mensaje');
+                                })
+                                .finally(() => toggleLoading(false)); // Ocultar indicador de carga
+
+                        });
+
+                        actionCell.appendChild(fileInput);
+                        actionCell.appendChild(attachButton);
+                    }else{
+
+
+                        attachButton.textContent = "Descencriptar";
+                        attachButton.className = "file-button";
+                        //actionCell.appendChild(fileInput);
+
+                        attachButton.className = "file-button";
+                        attachButton.addEventListener('click', function () {
+
+
+
+                            const selectedFile = fileInput.files[0]; // Obtener archivo seleccionado
+
+                            // Obtener la fila del botón presionado
+                            const remitente = row.children[2].textContent;
+                            const archivo =row.children[1].textContent;
+                            alert(remitente+","+archivo);
+                            console.log(remitente+"este es remitente");
+
+                            // Crear FormData para enviar los datos
+                            const formData = new FormData();
+
+                            formData.append('archivoTabla', archivo); // Archivo desde la tabla
+                            formData.append('userreceived', user); // Archivo seleccionado
+                            formData.append('user', remitente);
+
+                            toggleLoading(true); // Mostrar indicador de carga
+                            fetch('/descripted', {
+                                method: 'POST',
+                                body: formData
+                            })
+                                .then(response => response.text())
+                                .then(message => {
+                                    alert("Mensaje enviado: " + message); // Mostrar mensaje de éxito o error
+                                    loadFiles(); // Recargar la tabla de archivos
+                                })
+                                .catch(error => {
+                                    console.error('Error al enviar el mensaje:', error);
+                                    alert('Error al enviar el mensaje');
+                                })
+                                .finally(() => toggleLoading(false)); // Ocultar indicador de carga
+
+                        });
+                        actionCell.appendChild(attachButton);
+
+
+                    }
+
+
+
+
+                });//termina ciclo por cada archivo
+            })
+            .catch(error => {
+                console.error('Error al obtener los archivos:', error);
+            })
+            .finally(() => toggleLoading(false)); // Ocultar indicador de carga
+    }
+
+    async function buscarUsuario(buscado) {
+        try {
+            // Crear los datos a enviar en formato de URL
+            const formData = new URLSearchParams();
+            formData.append('username', buscado);
+
+            // Realizar la solicitud POST al backend
+            const response = await fetch('/searchuser', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: formData.toString(),
+            });
+
+            // Verificar si la respuesta fue exitosa
+            if (response.ok) {
+                const alias = await response.text(); // Leer el alias devuelto por el backend
+                console.log("Usuario encontrado:", alias);
+                return alias; // Retornar el alias
+            } else {
+                console.error("Usuario no encontrado.");
+                return "Usuario no encontrado";
+            }
+        } catch (error) {
+            console.error("Error al buscar el usuario:", error);
+            return "Error al buscar el usuario";
+        }
+    }
+
+
+
+
+
+
+
+    // Cargar archivos cuando la página se carga
+    document.addEventListener("DOMContentLoaded", loadFiles);
+</script>
+
+<form action="/profile-return">
+    <button>Volver al perfil</button>
+</form>
+</body>
+</html>

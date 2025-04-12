@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Formulario de Login</title>
+  <style>
+    /* Estilos generales */
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f4f4f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+    }
+
+    /* Estilos para el formulario */
+    #loginForm {
+      background-color: #ffffff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 300px;
+      text-align: center;
+    }
+
+    label {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 8px;
+      display: block;
+      text-align: left;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 16px;
+      color: #333;
+      box-sizing: border-box;
+    }
+
+    input:focus {
+      border-color: #007bff;
+      outline: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    /* Estilo para el botón de login con Google */
+    .login-with-google-btn {
+      width: 100%;
+      padding: 12px;
+      background-color: #db4437;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      margin-top: 15px;
+      cursor: pointer;
+    }
+
+    .login-with-google-btn:hover {
+      background-color: #c1351d;
+    }
+
+    /* Estilos para el contenedor */
+    .container {
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Formulario de Login</h2>
+
+  <!-- Formulario de inicio de sesión -->
+  <form id="loginForm">
+    <label for="username">Nombre de usuario:</label>
+    <input type="text" id="username" name="username" required>
+
+    <label for="password">Contraseña:</label>
+    <input type="password" id="password" name="password" required>
+
+    <button type="submit">Iniciar sesión</button>
+  </form>
+  <form id="newUser">
+    <a href="/createuser">Crear usuario</a>
+  </form>
+
+  <!-- Botón para iniciar sesión con Google -->
+  <form action="/oauth2/authorization/google" method="GET">
+    <button type="submit" class="login-with-google-btn">
+      Iniciar sesión con Google
+    </button>
+  </form>
+</div>
+
+<script>
+  document.getElementById("loginForm").addEventListener("submit", function(event) {
+    event.preventDefault(); // Evitar el envío del formulario normal
+
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    fetch("/loginjwt", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ username: username, password: password })
+    })
+
+            .then(response => {
+              if (!response.ok) {
+                throw new Error("Error de autenticación");
+              }
+              localStorage.setItem("userName", username);
+              window.location.href="/hola";
+              //return response.json();
+            })
+
+            .catch(error => {
+              //alert("Error de autenticación. Inténtalo de nuevo.");
+              console.error("Error:", error);
+            });
+
+
+
+
+
+
+
+  });
+
+</script>
+
+</body>
+</html>
+

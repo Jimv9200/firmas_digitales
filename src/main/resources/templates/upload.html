@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subir Imagen</title>
+</head>
+<body>
+<h1>Subir Imagen js</h1>
+<input type="file" id="imageInput" accept="image/*">
+<button onclick="uploadImage()">Subir Imagen</button>
+
+<script src="/ImageUploader.js"></script>
+<script>
+    const imageUploader = new ImageUploader("/upload-image");
+
+    function uploadImage() {
+        imageUploader.uploadImage("imageInput")
+            .then(response => {
+                alert("Imagen subida exitosamente: " + JSON.stringify(response));
+            })
+            .catch(error => {
+                alert("Error al subir la imagen: " + error.message);
+            });
+    }
+</script>
+<form action="/profile-return">
+    <button>Volver al perfil</button>
+</form>
+</body>
+</html>

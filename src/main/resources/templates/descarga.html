@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Descargar Texto</title>
+</head>
+<body>
+
+<!-- Campo de texto que muestra el contenido pasado desde el controlador -->
+<textarea id="textoArea" rows="10" cols="30" th:text="${texto}"></textarea>
+
+<!-- Botón para descargar el texto en un archivo -->
+<br><br>
+<button onclick="descargarTexto()">Descargar Texto</button>
+
+<script>
+    function descargarTexto() {
+        // Obtiene el texto del área de texto
+        const texto = document.getElementById("textoArea").value;
+
+        // Crea un archivo Blob con el texto
+        const blob = new Blob([texto], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+
+        // Crea un enlace para descargar el archivo
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "texto.txt";
+        document.body.appendChild(a);
+        a.click();
+
+        // Limpia el enlace temporal
+        URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    }
+</script>
+
+</body>
+</html>
+

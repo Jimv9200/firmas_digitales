@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Imágenes</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        img {
+            max-width: 100px;
+            height: auto;
+        }
+        .delete-button {
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .delete-button:hover {
+            background-color: darkred;
+        }
+        .sign-dialog {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            border: 1px solid #ccc;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        .sign-dialog input[type="file"] {
+            margin-bottom: 10px;
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+<h1>Imágenes de la Carpeta</h1>
+<table id="filesTable">
+    <thead>
+    <tr>
+        <th>Imagen</th>
+        <th>Nombre del Archivo</th>
+        <th>Acciones</th>
+    </tr>
+    </thead>
+    <tbody>
+    <!-- Los archivos se insertarán aquí -->
+    </tbody>
+</table>
+
+<!-- Diálogo para seleccionar archivo -->
+<div class="overlay" id="overlay"></div>
+<div class="sign-dialog" id="signDialog">
+    <h3>Seleccione un archivo para firmar</h3>
+    <input type="file" id="fileInput" accept="*/*">
+    <button id="submitSign">Firmar</button>
+    <button id="cancelSign">Cancelar</button>
+</div>
+
+<script>
+    const user = localStorage.getItem("userEmail");
+    const folderPath = user; // Ruta de la carpeta
+
+    // Obtener referencias al diálogo y elementos relacionados
+    const signDialog = document.getElementById("signDialog");
+    const overlay = document.getElementById("overlay");
+    const fileInput = document.getElementById("fileInput");
+    const submitSign = document.getElementById("submitSign");
+    const cancelSign = document.getElementById("cancelSign");
+    let currentFileName = null;
+
+    // Función para mostrar el diálogo
+    function showSignDialog(fileName) {
+        currentFileName = fileName;
+        fileInput.value = ""; // Limpiar la selección anterior
+        signDialog.style.display = "block";
+        overlay.style.display = "block";
+    }
+
+    // Función para ocultar el diálogo
+    function hideSignDialog() {
+        signDialog.style.display = "none";
+        overlay.style.display = "none";
+    }
+
+    // Función para obtener y mostrar los archivos
+    function loadFiles() {
+        fetch(`/files?folderPath=${encodeURIComponent(folderPath)}`)
+            .then(response => response.json())  // Convertir la respuesta a JSON
+            .then(files => {
+                const tableBody = document.getElementById("filesTable").getElementsByTagName("tbody")[0];
+
+                // Limpiar la tabla antes de cargar nuevos datos
+                tableBody.innerHTML = "";
+
+                files.forEach(file => {
+                    // Crear una nueva fila en la tabla
+                    const row = tableBody.insertRow();
+
+                    // Crear una celda para la imagen
+                    const imgCell = row.insertCell();
+                    const imgElement = document.createElement('img');
+
+                    imgElement.src = "/usuario/" + user + "/uploads/" + file;  // Ruta de la imagen
+                    imgCell.appendChild(imgElement);
+
+                    // Crear una celda para el nombre del archivo
+                    const nameCell = row.insertCell();
+                    nameCell.textContent = file;
+
+                    // Crear una celda para el botón de firmar
+                    const actionCell = row.insertCell();
+                    const signButton = document.createElement('button');
+                    signButton.textContent = "Firmar";
+                    signButton.classList.add('sign');
+
+                    // Mostrar diálogo de selección al presionar "Firmar"
+                    signButton.addEventListener('click', function () {
+                        showSignDialog(file);
+                    });
+
+                    actionCell.appendChild(signButton);
+                });
+            })
+            .catch(error => {
+                console.error('Error al obtener los archivos:', error);
+            });
+    }
+
+    // Enviar archivo seleccionado
+    submitSign.addEventListener('click', function () {
+        const selectedFile = fileInput.files[0];
+        if (!selectedFile) {
+            alert("Por favor, seleccione un archivo para firmar.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+        formData.append("fileName", currentFileName); // Nombre original del archivo
+
+        fetch("/files", {
+            method: "POST",
+            body: formData
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Error al enviar el archivo.");
+                }
+                return response.text();
+            })
+            .then(message => {
+                alert(message);
+                hideSignDialog();
+                loadFiles(); // Recargar la tabla
+            })
+            .catch(error => {
+                console.error("Error al firmar el archivo:", error);
+                alert("Error al firmar el archivo.");
+            });
+    });
+
+    // Cancelar diálogo
+    cancelSign.addEventListener('click', hideSignDialog);
+
+    // Cargar archivos cuando la página se carga
+    document.addEventListener("DOMContentLoaded", loadFiles);
+</script>
+
+<form action="/profile-return">
+    <button>Volver al perfil</button>
+</form>
+</body>
+</html>

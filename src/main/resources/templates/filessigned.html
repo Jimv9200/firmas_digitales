@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lista de Imágenes</title>
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    table, th, td {
+      border: 1px solid black;
+    }
+    th, td {
+      padding: 10px;
+      text-align: center;
+    }
+    img {
+      max-width: 100px;
+      height: auto;
+    }
+    .delete-button {
+      background-color: red;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    .delete-button:hover {
+      background-color: darkred;
+    }
+    .file-button {
+      background-color: blue;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    .file-button:hover {
+      background-color: darkblue;
+    }
+    /* Estilos para el indicador de carga */
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .loading-overlay span {
+      color: white;
+      font-size: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+<h1>Imágenes de la Carpeta</h1>
+
+<!-- Indicador de carga -->
+<div id="loadingOverlay" class="loading-overlay">
+  <span>Cargando...</span>
+</div>
+
+<table id="filesTable">
+  <thead>
+  <tr>
+    <th>Imagen</th>
+    <th>Nombre del Archivo</th>
+    <th>Mensaje</th>
+    <th>Acciones</th>
+  </tr>
+  </thead>
+  <tbody>
+  <!-- Los archivos se insertarán aquí -->
+  </tbody>
+</table>
+
+<script>
+  const user = localStorage.getItem("userEmail");
+  const folderPath = user; // Ruta de la carpeta
+  const loadingOverlay = document.getElementById("loadingOverlay");
+
+  // Función para mostrar/ocultar indicador de carga
+  function toggleLoading(show) {
+    loadingOverlay.style.display = show ? "flex" : "none";
+  }
+
+  // Función para obtener y mostrar los archivos
+  function loadFiles() {
+    toggleLoading(true); // Mostrar indicador de carga
+    fetch(`/filessigned?folderPath=${encodeURIComponent(folderPath)}`)
+            .then(response => response.json()) // Convertir la respuesta a JSON
+            .then(files => {
+              const tableBody = document.getElementById("filesTable").getElementsByTagName("tbody")[0];
+
+              // Limpiar la tabla antes de cargar nuevos datos
+              tableBody.innerHTML = "";
+
+              files.forEach(file => {
+                // Crear una nueva fila en la tabla
+                const row = tableBody.insertRow();
+
+                // Crear una celda para la imagen
+                const imgCell = row.insertCell();
+                const imgElement = document.createElement('img');
+                imgElement.src = "/usuario/" + user + "/firmados/" + file; // Ruta de la imagen
+                imgCell.appendChild(imgElement);
+
+                // Crear una celda para el nombre del archivo
+                const nameCell = row.insertCell();
+                nameCell.textContent = file;
+
+                // Crear una celda para el mensaje
+                // Crear una celda para la lista desplegable
+                const dropdownCell = row.insertCell();
+
+                // Crear el elemento <select> para la lista desplegable
+                const selectElement = document.createElement('select');
+
+                // Opción por defecto
+                const defaultOption = document.createElement('option');
+                defaultOption.textContent = "Seleccione un ítem";
+                defaultOption.disabled = true;
+                defaultOption.selected = true;
+                selectElement.appendChild(defaultOption);
+
+                // Llamar al backend para obtener los ítems
+                fetch('/obtenerItems') // Endpoint que devuelve la lista
+                        .then(response => response.json()) // Convertir la respuesta a JSON
+                        .then(items => {
+                          // Agregar cada ítem como opción al <select>
+                          items.forEach(item => {
+                            const option = document.createElement('option');
+                            option.textContent = item;
+                            option.value = item; // Puedes usar un valor diferente si lo necesitas
+                            selectElement.appendChild(option);
+                          });
+                        })
+                        .catch(error => {
+                          console.error('Error al obtener los ítems:', error);
+                        });
+                dropdownCell.appendChild(selectElement);
+
+                // Crear una celda para las acciones
+                const actionCell = row.insertCell();
+
+                // Campo de selección de archivo
+                const fileInput = document.createElement('input');
+                fileInput.type = "file";
+                fileInput.style.display = "none"; // Oculto por defecto
+
+                // Botón para seleccionar y enviar
+                const attachButton = document.createElement('button');
+                attachButton.textContent = "Adjuntar y Enviar";
+                attachButton.className = "file-button";
+
+                attachButton.addEventListener('click', function () {
+                  fileInput.click(); // Abrir selector de archivos
+
+                  fileInput.addEventListener('change', function () {
+                    const selectedFile = fileInput.files[0]; // Obtener archivo seleccionado
+
+
+                    if (!selectedFile) {
+                      alert('Por favor, selecciona un archivo.');
+                      return;
+                    }
+
+                    // Crear FormData para enviar los datos
+                    const formData = new FormData();
+                    alert("ha seleccionado: "+ selectElement.value);
+                    formData.append('mensaje', selectElement.value);
+                    formData.append('archivoTabla', file); // Archivo desde la tabla
+                    formData.append('archivoSeleccionado', selectedFile); // Archivo seleccionado
+
+                    toggleLoading(true); // Mostrar indicador de carga
+                    fetch('/recibo', {
+                      method: 'POST',
+                      body: formData
+                    })
+                            .then(response => response.text())
+                            .then(message => {
+                              alert("Mensaje enviado: " + message); // Mostrar mensaje de éxito o error
+                              loadFiles(); // Recargar la tabla de archivos
+                            })
+                            .catch(error => {
+                              console.error('Error al enviar el mensaje:', error);
+                              alert('Error al enviar el mensaje');
+                            })
+                            .finally(() => toggleLoading(false)); // Ocultar indicador de carga
+                  });
+                });
+
+                actionCell.appendChild(fileInput);
+                actionCell.appendChild(attachButton);
+              });
+            })
+            .catch(error => {
+              console.error('Error al obtener los archivos:', error);
+            })
+            .finally(() => toggleLoading(false)); // Ocultar indicador de carga
+  }
+
+  // Cargar archivos cuando la página se carga
+  document.addEventListener("DOMContentLoaded", loadFiles);
+</script>
+
+<form action="/profile-return">
+  <button>Volver al perfil</button>
+</form>
+</body>
+</html>

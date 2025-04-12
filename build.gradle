@@ -1,0 +1,58 @@
+plugins {
+    id 'org.springframework.boot' version '3.1.1'
+    id 'io.spring.dependency-management' version '1.1.0'
+    id 'java'
+}
+
+group = 'com.api.rest'
+version = '0.0.1-SNAPSHOT'
+description = 'Spring Boot Application With Keycloak'
+sourceCompatibility = '17'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+
+
+
+    // Spring Boot Dependencies
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    // Keycloak Dependencies
+    implementation "org.keycloak:keycloak-admin-client:21.1.2"
+    implementation 'org.jboss.resteasy:resteasy-client:4.7.9.Final' // Asegúrate de que coincida con la versión requerida
+    implementation 'org.jboss.resteasy:resteasy-core:4.7.9.Final'
+    //implementation 'org.jboss.resteasy:resteasy-jaxrs:3.15.6.Final'
+
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+
+    // Database
+    runtimeOnly 'com.mysql:mysql-connector-j'
+
+    // Testing
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+
+    compileOnly 'org.projectlombok:lombok:1.18.36'
+    annotationProcessor 'org.projectlombok:lombok:1.18.36'
+
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5' // Para soporte JSON
+
+
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+

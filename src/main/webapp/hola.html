@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+</head>
+<body>
+<h1>Hola uno dos</h1>
+<script>
+  window.onload = function() {
+    fetch('/saludo')
+            .then(response => response.text())  // Si esperamos una respuesta de texto
+            .then(text => console.log(text));  // Muestra el texto recibido
+
+  }
+</script>
+</body>
+</html>
